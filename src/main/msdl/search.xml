@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<root javaPackageBase="syl.study.netty.protobuf">
+    <dataTypes>
+        <dataType>
+            <field modifier="required" type="int32" name="subReqID" order="1" description="id"/>
+            <field modifier="required" type="string" name="userName" order="2" description="用户名"/>
+            <field modifier="required" type="string" name="productName" order="3" description="产品名"/>
+            <field modifier="repeated" type="string" name="address" order="4" description="地址"/>
+        </dataType>
+        <dataType>
+            <field modifier="required" type="int32" name="subReqID" order="1" description="id"/>
+            <field modifier="required" type="int32" name="respCode" order="2" description="返回码"/>
+            <field modifier="required" type="string" name="desc" order="3" description="描述"/>
+        </dataType>
+    </dataTypes>
+</root>
