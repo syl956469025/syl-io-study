@@ -2,9 +2,11 @@ package syl.custom.client;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.log4j.Logger;
 import syl.custom.Header;
 import syl.custom.MessageType;
 import syl.custom.NettyMessage;
+import syl.study.utils.FastJsonUtil;
 
 /**
  * 客户端
@@ -14,12 +16,14 @@ import syl.custom.NettyMessage;
  */
 public class LoginAuthReqHandler extends ChannelInboundHandlerAdapter {
 
-
+    private Logger logger  = Logger.getLogger(this.getClass());
 
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ctx.writeAndFlush(buildLoginReq());
+        NettyMessage authReq = buildLoginReq();
+        logger.info("请求握手消息为："+FastJsonUtil.bean2Json(authReq));
+        ctx.writeAndFlush(authReq);
     }
 
     @Override
@@ -32,7 +36,7 @@ public class LoginAuthReqHandler extends ChannelInboundHandlerAdapter {
                 //握手失败，关闭连接
                 ctx.close();
             }else{
-                System.out.println("握手成功"+message);
+                logger.info("握手成功"+message);
                 ctx.fireChannelRead(msg);
             }
         }else{
@@ -42,7 +46,13 @@ public class LoginAuthReqHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
         ctx.fireExceptionCaught(cause);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        ctx.flush();
     }
 
     private NettyMessage buildLoginReq(){

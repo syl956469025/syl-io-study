@@ -1,12 +1,10 @@
 package syl.custom;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.handler.codec.MessageToByteEncoder;
 import syl.custom.codec.NettyMarshallingEncoder;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,7 +13,7 @@ import java.util.Map;
  * @author 史彦磊
  * @create 2018-04-13 15:59.
  */
-public final class NettyMessageEncoder extends MessageToMessageEncoder<NettyMessage> {
+public final class NettyMessageEncoder extends MessageToByteEncoder<NettyMessage> {
 
     NettyMarshallingEncoder encoder;
 
@@ -23,22 +21,27 @@ public final class NettyMessageEncoder extends MessageToMessageEncoder<NettyMess
         this.encoder = MarshallingCodeCFactory.buildMarshallingEncoder();
     }
 
+
+
     @Override
-    protected  void encode(ChannelHandlerContext ctx, NettyMessage msg, List<Object> out) throws Exception {
+    protected  void encode(ChannelHandlerContext ctx, NettyMessage msg, ByteBuf sendBuf) throws Exception {
         if (msg == null || msg.getHeader() == null){
             throw new Exception("需要编码的消息为空");
         }
-        ByteBuf sendBuf = Unpooled.buffer();
-        sendBuf.writeInt(msg.getHeader().getCrcCode());
-        sendBuf.writeInt(msg.getHeader().getLength());
-        sendBuf.writeLong(msg.getHeader().getSessionID());
-        sendBuf.writeByte(msg.getHeader().getType());
-        sendBuf.writeByte(msg.getHeader().getPriority());
-        sendBuf.writeInt(msg.getHeader().getAttachment().size());
+        Header header = msg.getHeader();
+//        ByteBuf sendBuf = Unpooled.buffer();
+        sendBuf.writeInt(header.getCrcCode());
+        sendBuf.writeInt(header.getLength());
+        sendBuf.writeLong(header.getSessionID());
+        sendBuf.writeByte(header.getType());
+        sendBuf.writeByte(header.getPriority());
+        sendBuf.writeInt(header.getAttachment().size());
+
+
         String key = null;
         byte[] keyArray = null;
         Object value = null;
-        for (Map.Entry<String, org.omg.CORBA.Object> param : msg.getHeader().getAttachment().entrySet()) {
+        for (Map.Entry<String, Object> param : header.getAttachment().entrySet()) {
             key = param.getKey();
             keyArray = key.getBytes("UTF-8");
             sendBuf.writeInt(keyArray.length);
@@ -50,10 +53,10 @@ public final class NettyMessageEncoder extends MessageToMessageEncoder<NettyMess
         keyArray = null;
         value = null;
         if (msg.getBody() !=null){
-            this.encoder.encode(ctx,msg.getHeader(),sendBuf);
+            this.encoder.encode(ctx, msg.getBody(),sendBuf);
         }else{
             sendBuf.writeInt(0);
-            sendBuf.setInt(4,sendBuf.readableBytes());
         }
+        sendBuf.setInt(4,sendBuf.readableBytes());
     }
 }

@@ -2,9 +2,11 @@ package syl.custom.server;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.log4j.Logger;
 import syl.custom.Header;
 import syl.custom.MessageType;
 import syl.custom.NettyMessage;
+import syl.study.utils.FastJsonUtil;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -18,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
+    private Logger logger  = Logger.getLogger(this.getClass());
+
     private Map<String,Boolean> nodeCheck = new ConcurrentHashMap<>();
 
     private String[] whiteList = {"127.0.0.1","192.168.89.46"};
@@ -25,9 +29,11 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        logger.info("接收到的握手消息为："+FastJsonUtil.bean2Json(msg));
         NettyMessage message = (NettyMessage) msg;
         //如果是握手应答消息，需要判断是否认证成功
         if (message.getHeader() != null && message.getHeader().getType() == MessageType.LOGIN_REQ.value()) {
+            logger.info("登录成功");
             String nodeIndex = ctx.channel().remoteAddress().toString();
             NettyMessage loginResp = null;
             if (nodeCheck.containsKey(nodeIndex)) {
@@ -47,7 +53,7 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
                     nodeCheck.put(nodeIndex,true);
                 }
             }
-            System.out.println("认证的返回消息为："+loginResp+" 消息体为： "+loginResp.getBody());
+            logger.info("认证的返回消息为："+loginResp+" 消息体为： "+loginResp.getBody());
             ctx.writeAndFlush(loginResp);
         }else{
             ctx.fireChannelRead(msg);
@@ -57,6 +63,7 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
         nodeCheck.remove(ctx.channel().remoteAddress().toString());//删除缓存
         ctx.close();
         ctx.fireChannelRead(cause);
@@ -69,5 +76,10 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
         msg.setHeader(header);
         msg.setBody(result);
         return msg;
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        ctx.flush();
     }
 }

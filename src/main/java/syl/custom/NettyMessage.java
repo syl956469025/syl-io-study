@@ -10,6 +10,7 @@ package syl.custom;
 public final class NettyMessage {
 
     private Header header;
+    private Object body;
 
     public Object getBody() {
         return body;
@@ -19,7 +20,7 @@ public final class NettyMessage {
         this.body = body;
     }
 
-    private Object body;
+
 
     public Header getHeader() {
         return header;
